@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  dpdk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dpdk-image
+    container_name: dpdk-container
+    privileged: true
+    volumes:
+      - ./:/app
+    environment:
+      - NAME=dpdk-container
+      - IMAGE=dpdk-image
+      - RTE_SDK=/root/dpdk-stable-20.11.9
+      - RTE_TARGET=x86_64-native-linuxapp-gcc
+    cap_add:
+      - ALL
+    networks:
+      - dpdk-net
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    command: /bin/bash
+
+networks:
+  dpdk-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: dpdk-br0

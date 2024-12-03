@@ -1,4 +1,6 @@
-export RTE_SDK=/root/dpdk-2.0.0
-export PKTGEN=/root/pktgen-dpdk-2.8.5-2
+#!/bin/bash
+
+# DPDK environment variables
+export RTE_SDK=/root/dpdk-stable-20.11.9
 export RTE_TARGET=x86_64-native-linuxapp-gcc
-alias menu='source $RTE_SDK/tools/setup.sh'
+export PATH=$PATH:/usr/bin

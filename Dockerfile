@@ -1,19 +1,43 @@
-FROM registry.access.redhat.com/rhel7/rhel-tools
-MAINTAINER jeder@redhat.com
+FROM ccr.ccs.tencentyun.com/library/ubuntu:20.04
 
-LABEL RUN docker run -it --privileged -v /sys/bus/pci/drivers:/sys/bus/pci/drivers -v /sys/kernel/mm/hugepages:/sys/kernel/mm/hugepages -v /sys/devices/system/node:/sys/devices/system/node -v /dev:/dev --name NAME -e NAME=NAME -e IMAGE=IMAGE IMAGE"
+MAINTAINER Your Name <your.email@example.com>
 
-# Setup yum repos, or use subscription-manager
+# Set environment variables to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
 
-# Install DPDK support packages.
-RUN yum install -y sudo libhugetlbfs-utils libpcap-devel \
-    kernel kernel-devel kernel-headers
+# Update package sources to use Tencent Cloud mirrors
+RUN sed -i 's/archive.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
 
-# Build DPDK and pktgen-dpdk for x86_64-native-linuxapp-gcc.
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    sudo \
+    libhugetlbfs-bin \
+    libpcap-dev \
+    linux-headers-generic \
+    build-essential \
+    curl \
+    python3 \
+    python3-pip \
+    pkg-config \
+    ninja-build \
+    meson \
+    libnuma-dev \
+    libpcap0.8-dev \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
 WORKDIR /root
+
+# Copy build script and profile
 COPY ./build_dpdk.sh /root/build_dpdk.sh
 COPY ./dpdk-profile.sh /etc/profile.d/
-RUN /root/build_dpdk.sh
 
-# Defaults to a bash shell, you could put your DPDK-based application here.
-CMD ["/usr/bin/bash"]
+# Build DPDK
+RUN chmod +x /root/build_dpdk.sh && /root/build_dpdk.sh
+
+# Verify DPDK installation on container start
+CMD ["bash", "-c", "source /etc/profile.d/dpdk-profile.sh && ls -l $RTE_SDK && echo 'DPDK installation verified' && exec bash"]
